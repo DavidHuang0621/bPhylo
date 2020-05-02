@@ -25,14 +25,6 @@ blast_seq<-function(refseq ,blastDB,hits,targetName){
   if(BRhitLen>hits) {
     BRhitLen=hits #Limit hit length
   }
-  trun_BR<<-as.vector(BR[1:BRhitLen,])
-  write.table(trun_BR$SubjectID, file = "./GBACC.txt", row.names = F, col.names = F, quote = F)
-  system('./retrieveSeq.sh')
-  BRSeqs<-readDNAStringSet("seqs.txt")
-  trun_BR$Taxa<-paste(gsub('16S .*', '',BRSeqs@ranges@NAMES))
-  trun_BR$Seqs<-substr(paste(BRSeqs),BR$S.end,BR$S.start)
-  targetDF<-data.frame(Taxa=targetName, Seqs=reverseComplement(refseq)) #Create target DF
-  GBDF<-rbind.fill(trun_BR,targetDF) #Add target DF to main DF
   trun_BR<-as.vector(BR[1:BRhitLen,])
   write.table(trun_BR$SubjectID, file = "./GBACC.txt", row.names = F, col.names = F, quote = F)
   system('./retrieveSeq.sh')
