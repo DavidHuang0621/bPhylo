@@ -10,7 +10,8 @@ library(ggtree)
 library(seqRFLP)
 
 #Input files
-seqdir="~/ColauttiLabScratch/QIIME2/02:04:2020/UniqSeqs.fasta" # seq 8 interesting check BS tree
+#seqdir="~/ColauttiLabScratch/QIIME2/02:04:2020/UniqSeqs.fasta" # seq 8 interesting check BS tree
+seqdir="~/ColauttiLabScratch/20200229_top18.fasta"
 dbdir="~/ColauttiLabScratch/16SMicrobialDB/16SMicrobial" #https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download
 
 #Initialize
@@ -21,22 +22,19 @@ blastDB<- blast(dbdir) #load 16S database
 blast_seq<-function(refseq ,blastDB,hits,targetName){ 
   BR<-predict(blastDB, refseq) #Blast sequence against 16S database, returns up to 500 hits
   BRhitLen<-length(BR$SubjectID) #return number of blast hits
-  if(BRhitLen>hits) BRhitLen=hits #Limit hit length
-  BRhits<-as.vector(BR$SubjectID[1:BRhitLen]) #Create truncated hit vector
-  GBAlist<-lapply(BRhits, GBAccession) #convert BRsublist objects to GenBankAccession objects
-  GbRs<<-lapply(GBAlist, readGenBank) #Obtain sequence data from GenBank
-  BrSeqDF<-setNames(data.frame(matrix(ncol = 3, nrow = 0)), c("ID", "Taxa", "Seqs"))
-  for (j in 1:length(GbRs)) {
-    tempGBR <- GbRs[[j]]
-    tempDF <- data.frame(ID=paste(GBAlist[j]), Taxa=paste(gsub('16S .*', '', tempGBR@definition), BR$SubjectID[j]), Seqs=substr(paste(tempGBR@sequence),BR$S.end[j],BR$S.start[j]))
-    BrSeqDF <- rbind(BrSeqDF, tempDF)
-  } #Extract sequence data, append to list
+  if(BRhitLen>hits) {
+    BRhitLen=hits #Limit hit length
+  }
+  trun_BR<<-as.vector(BR[1:BRhitLen,])
+  write.table(trun_BR$SubjectID, file = "./GBACC.txt", row.names = F, col.names = F, quote = F)
+  system('./retrieveSeq.sh')
+  BRSeqs<-readDNAStringSet("seqs.txt")
+  trun_BR$Taxa<-paste(gsub('16S .*', '',BRSeqs@ranges@NAMES))
+  trun_BR$Seqs<-substr(paste(BRSeqs),BR$S.end,BR$S.start)
   targetDF<-data.frame(Taxa=targetName, Seqs=reverseComplement(refseq)) #Create target DF
-  GBDF<-cbind(BR[1:BRhitLen,],BrSeqDF) #Add blast result information to DF
-  GBDF<-rbind.fill(GBDF,targetDF) #Add target DF to main DF
+  GBDF<-rbind.fill(trun_BR,targetDF) #Add target DF to main DF
   return(GBDF)
 }
-SeqDF<-blast_seq(seqs[2],blastDB,50,'Borrelia')
 
 #Add more targets
 add_target<-function(SeqDF,newTar,targetName){
@@ -44,14 +42,12 @@ add_target<-function(SeqDF,newTar,targetName){
   tar2DF <-merge(SeqDF,tar2, all.y = T)
   finalDF<-rbind(SeqDF,tar2DF)
 }
-SeqDF<-add_target(SeqDF,seqs[3],'Borreliella')
 
 #Write Fasta
 to_fasta<-function(SeqDF,path){
   fasDF <- data.frame('names' = paste(SeqDF$Taxa), 'sequences' = SeqDF$Seqs)
   fasDF.fasta = dataframe2fas(fasDF, file=path)
 }
-to_fasta(SeqDF,"~/ColauttiLabScratch/FastasForClaire/BorreliaTrimmed")
 
 #Align sequences 
 align_seqs<-function(SeqDF){
@@ -62,7 +58,6 @@ align_seqs<-function(SeqDF){
   checkAlignment(GbkAlign, what=1)
   return(GbkAlign)
 } 
-AlignedSeqs <- align_seqs(SeqDF)
 
 #Build phylogenic trees
 bootstrap_tree<-function(AlignedSeqs){ 
@@ -74,8 +69,6 @@ bootstrap_tree<-function(AlignedSeqs){
   bs <- bootstrap.pml(fitJC, bs=100, optNni=TRUE, multicore=F, control = pml.control(trace=0))
   plotBS(midpoint(fitJC$tree),bs, p = 0, type="p", main = "P = 0")
 }
-Bs<-bootstrap_tree(AlignedSeqs)
-plot(Bs)
 
 NJ_Tree<-function(AlignedSeqs){
   SeqDNA<-AlignedSeqs
@@ -84,5 +77,4 @@ NJ_Tree<-function(AlignedSeqs){
   PhyloTree<-ggtree(Tree,layout="rectangular") + geom_tiplab() + xlim(NA,0.3)
   return(PhyloTree)
 }
-NJ<-NJ_Tree(AlignedSeqs)
-NJ
+
