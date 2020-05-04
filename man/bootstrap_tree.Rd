@@ -2,16 +2,20 @@
 % Please edit documentation in R/BlastPhylos.R
 \name{bootstrap_tree}
 \alias{bootstrap_tree}
-\title{Build Phylogenic Tree}
+\title{Bootstrap tree and save as PDF}
 \usage{
-bootstrap_tree(AlignedSeqs)
+bootstrap_tree(fitted_model, bs_iterations, path)
 }
 \arguments{
-\item{AlignedSeqs}{DNAbin object of aligned sequences.}
+\item{fitted_model}{PML object.}
+
+\item{bs_iterations}{Integer for bootstrap iterations.}
+
+\item{path}{Path where PDF will be saved.}
 }
 \value{
 None
 }
 \description{
-Build Phylogenic Tree
+Bootstrap tree and save as PDF
 }
