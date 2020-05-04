@@ -1,0 +1,19 @@
+Package: PhyloBuilder
+Type: Package
+Title: Iterative Phylogeny Builder
+Version: 1.0.0
+Author: David Huang
+Maintainer: Yukthi Wickramarachchi <yukthiw61@gmail.com>
+Description: CHANGE
+License: MIT
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.0
+Imports: 
+    Biostrings,
+    ape,
+    ggtree,
+    phangorn,
+    plyr,
+    rBLAST,
+    seqRFLP
